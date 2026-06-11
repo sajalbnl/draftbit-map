@@ -41,3 +41,12 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Cloudflare
+.wrangler/
+
+# local working notes (not part of the deliverable)
+docs-private/
+.claude/
+CLAUDE.md
+AGENTS.md

@@ -1,0 +1,21 @@
+/**
+ * Cloudflare Worker configuration.
+ *
+ * The web build (`npx expo export --platform web`) produces static files in
+ * ./dist. This Worker serves them from Cloudflare's edge.
+ *
+ * `not_found_handling: "single-page-application"` is essential: the app is a
+ * client-side SPA, so a direct request to /location/us7000abcd has no matching
+ * file on the server. This setting makes Cloudflare serve index.html instead
+ * and lets expo-router resolve the route in the browser — without it, deep
+ * links and page refreshes would 404.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "draftbit-map-app",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

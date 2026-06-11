@@ -1,50 +1,76 @@
-# Welcome to your Expo app 👋
+# draftbit-map-app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A two-screen, cross-platform (iOS / Android / Web) earthquake map built with
+**Expo SDK 54**, **TypeScript**, and **expo-router**, deployed to a
+**Cloudflare Worker**.
 
-## Get started
+- **Map screen** — every earthquake recorded worldwide in the last 24 hours,
+  plotted live from the [USGS GeoJSON feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
+  Markers are colour-coded by magnitude.
+- **Detail screen** (`/location/[id]`) — magnitude, time, depth, coordinates,
+  felt reports, tsunami flag, and a link to the official USGS event page.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it locally
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- press `w` for web
+- scan the QR code with **Expo Go** for iOS/Android
+  (Expo Go must match SDK 54 — older builds are available at [expo.dev/go](https://expo.dev/go))
 
-## Learn more
+## Architecture
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+app/                     expo-router screens (file tree = navigation)
+  _layout.tsx            root stack
+  index.tsx              map screen            →  /
+  location/[id].tsx      detail screen         →  /location/:id
+components/
+  LocationMap.tsx        map for iOS/Android   (react-native-maps)
+  LocationMap.web.tsx    map for the browser   (react-leaflet + OpenStreetMap)
+  location-map-props.ts  the shared contract both implementations satisfy
+  LoadingView.tsx        full-screen loading state
+  ErrorView.tsx          full-screen error state with retry
+hooks/
+  use-locations.ts       loading / error / data / refetch state for screens
+services/
+  earthquakes.ts         fetch + parse USGS GeoJSON → clean Location[], cached
+types/
+  location.ts            the app-facing Location model
+constants/
+  magnitude.ts           shared severity colours / labels
+wrangler.jsonc           Cloudflare Worker config (static assets, SPA fallback)
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Layering rule:** screens → hooks → service → API. Screens never fetch
+directly and never see raw GeoJSON, so the data source can be swapped by
+editing one file (`services/earthquakes.ts`).
 
-## Join the community
+**The platform split:** `react-native-maps` wraps native iOS/Android map SDKs
+and has no web support. Metro resolves `LocationMap.web.tsx` (Leaflet) when
+bundling for web and `LocationMap.tsx` (react-native-maps) for native. Both
+implement the same props, so no other file is platform-aware.
 
-Join our community of developers creating universal apps.
+## Deploy to Cloudflare
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx wrangler login   # once
+npm run deploy       # = expo export --platform web && wrangler deploy
+```
+
+The exported `dist/` folder is served as static assets by a Cloudflare Worker.
+`not_found_handling: "single-page-application"` in `wrangler.jsonc` makes deep
+links like `/location/us7000abcd` serve `index.html` so expo-router can handle
+routing client-side.
+
+## Useful scripts
+
+| command             | what it does                              |
+| ------------------- | ----------------------------------------- |
+| `npm run typecheck` | TypeScript check (`tsc --noEmit`)         |
+| `npm run lint`      | ESLint via `expo lint`                    |
+| `npm run build:web` | export the static web build into `dist/`  |
+| `npm run deploy`    | build + deploy to Cloudflare              |
