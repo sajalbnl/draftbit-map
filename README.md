@@ -25,23 +25,28 @@ npx expo start
 
 ```
 app/                     expo-router screens (file tree = navigation)
-  _layout.tsx            root stack
+  _layout.tsx            root stack + theme + device frame
   index.tsx              map screen            →  /
   location/[id].tsx      detail screen         →  /location/:id
 components/
   LocationMap.tsx        map for iOS/Android   (react-native-maps)
   LocationMap.web.tsx    map for the browser   (react-leaflet + OpenStreetMap)
   location-map-props.ts  the shared contract both implementations satisfy
+  AppFrame.tsx           native passthrough (the app owns the screen)
+  AppFrame.web.tsx       centres the web build in a phone-width column
   LoadingView.tsx        full-screen loading state
   ErrorView.tsx          full-screen error state with retry
 hooks/
   use-locations.ts       loading / error / data / refetch state for screens
+  use-theme-colors.ts    resolves the palette for the current OS theme
+  use-color-scheme.ts    OS light/dark scheme (.web.ts adds a hydration guard)
 services/
   earthquakes.ts         fetch + parse USGS GeoJSON → clean Location[], cached
 types/
   location.ts            the app-facing Location model
 constants/
   magnitude.ts           shared severity colours / labels
+  colors.ts              light / dark theme palettes
 wrangler.jsonc           Cloudflare Worker config (static assets, SPA fallback)
 ```
 
@@ -52,7 +57,16 @@ editing one file (`services/earthquakes.ts`).
 **The platform split:** `react-native-maps` wraps native iOS/Android map SDKs
 and has no web support. Metro resolves `LocationMap.web.tsx` (Leaflet) when
 bundling for web and `LocationMap.tsx` (react-native-maps) for native. Both
-implement the same props, so no other file is platform-aware.
+implement the same props (`components/location-map-props.ts`), so no other file
+is platform-aware. The web map draws markers as inline-SVG teardrop pins
+coloured by magnitude — mirroring the native platform pins, and avoiding
+Leaflet's default PNG icons whose URLs break under bundlers. `AppFrame`
+uses the same `.web.tsx` split to render the browser build inside a
+phone-width column.
+
+**Theming:** screens read colours from `useThemeColors()` (backed by
+`constants/colors.ts`) so text, cards and borders stay readable in both light
+and dark mode, following the OS setting.
 
 ## Deploy to Cloudflare
 
