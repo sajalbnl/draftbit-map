@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
 import type { LocationMapProps } from '@/components/location-map-props';
+import { brand } from '@/constants/colors';
 import { formatMagnitude, magnitudeColor } from '@/constants/magnitude';
 
 /**
@@ -84,8 +85,8 @@ export default function LocationMap({ locations, onSelect }: LocationMapProps) {
                   padding: '6px 12px',
                   border: 'none',
                   borderRadius: 6,
-                  background: '#2563eb',
-                  color: '#fff',
+                  background: brand.primary,
+                  color: brand.onPrimary,
                   cursor: 'pointer',
                 }}
               >

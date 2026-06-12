@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { brand } from '@/constants/colors';
 import { useThemeColors } from '@/hooks/use-theme-colors';
 
 type ErrorViewProps = {
@@ -21,10 +22,16 @@ export default function ErrorView({ message, onRetry }: ErrorViewProps) {
       </Text>
       <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text>
       <Pressable
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: brand.primary },
+          pressed && styles.buttonPressed,
+        ]}
         onPress={onRetry}
       >
-        <Text style={styles.buttonText}>Try again</Text>
+        <Text style={[styles.buttonText, { color: brand.onPrimary }]}>
+          Try again
+        </Text>
       </Pressable>
     </View>
   );
@@ -51,13 +58,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#2563eb',
   },
   buttonPressed: {
     opacity: 0.8,
   },
   buttonText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
   },

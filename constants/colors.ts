@@ -34,3 +34,11 @@ export const darkColors: ThemeColors = {
   card: '#1f2937',
   border: '#374151',
 };
+
+/**
+ * Brand / action colours — constant across themes.
+ */
+export const brand = {
+  primary: '#2563eb',
+  onPrimary: '#ffffff',
+} as const;

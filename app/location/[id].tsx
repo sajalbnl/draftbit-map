@@ -17,7 +17,7 @@ import {
 } from '@/constants/magnitude';
 import { useLocation } from '@/hooks/use-locations';
 import { useThemeColors } from '@/hooks/use-theme-colors';
-import type { ThemeColors } from '@/constants/colors';
+import { brand, type ThemeColors } from '@/constants/colors';
 
 /**
  * Screen 2 — location detail. Route: /location/[id]
@@ -107,10 +107,16 @@ export default function LocationDetailScreen() {
 
       {location.url && (
         <Pressable
-          style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.linkButton,
+            { backgroundColor: brand.primary },
+            pressed && styles.pressed,
+          ]}
           onPress={() => Linking.openURL(location.url!)}
         >
-          <Text style={styles.linkButtonText}>View full report on USGS ↗</Text>
+          <Text style={[styles.linkButtonText, { color: brand.onPrimary }]}>
+            View full report on USGS ↗
+          </Text>
         </Pressable>
       )}
     </ScrollView>
@@ -201,7 +207,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   linkButton: {
-    backgroundColor: '#2563eb',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
@@ -210,7 +215,6 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   linkButtonText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
   },
