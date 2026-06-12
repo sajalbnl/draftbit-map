@@ -59,6 +59,9 @@ export default function LocationMap({ locations, onSelect }: LocationMapProps) {
           key={location.id}
           position={[location.latitude, location.longitude]}
           icon={pinIcon(location.magnitude)}
+          eventHandlers={{
+            mouseover: (e) => e.target.openPopup(),
+          }}
         >
           <Popup>
             <div style={{ minWidth: 180 }}>
