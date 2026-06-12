@@ -1,6 +1,7 @@
 import 'leaflet/dist/leaflet.css';
 
-import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet';
+import L from 'leaflet';
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
 import type { LocationMapProps } from '@/components/location-map-props';
 import { formatMagnitude, magnitudeColor } from '@/constants/magnitude';
@@ -12,21 +13,32 @@ import { formatMagnitude, magnitudeColor } from '@/constants/magnitude';
  * free OpenStreetMap tiles instead — no API key required, which matters
  * because this bundle is publicly served and client-side keys are extractable.
  *
- * Markers are SVG circles (CircleMarker) rather than image pins for two
- * reasons:
- * 1. Leaflet's default pin icons rely on image assets whose paths break under
- *    bundlers — a well-known papercut. Circles avoid asset loading entirely.
- * 2. Circles can encode data: radius scales with magnitude and colour shows
- *    severity, which suits earthquake data better than identical pins.
+ * Markers are teardrop pins to match the native iOS/Android map (which uses
+ * react-native-maps' platform pins). We build them with an inline-SVG
+ * `divIcon` rather than Leaflet's default image-based pin icon: those icons
+ * load PNGs by URL, whose paths break under Metro/bundlers — a well-known
+ * papercut. An inline SVG ships no image assets, so it bundles cleanly while
+ * still encoding severity via colour, like the native pins.
  *
  * Same props as LocationMap.tsx — Metro picks this file automatically when
  * bundling for web.
  */
 
-/** Bigger quake → bigger circle, clamped so extremes stay tappable/visible. */
-function markerRadius(magnitude: number | null): number {
-  const m = magnitude ?? 0;
-  return Math.max(4, Math.min(18, 4 + m * 2.5));
+/** Teardrop map pin, coloured by severity — mirrors the native pin shape. */
+function pinIcon(magnitude: number | null): L.DivIcon {
+  const color = magnitudeColor(magnitude);
+  return L.divIcon({
+    className: '', // strip Leaflet's default styling so only our SVG shows
+    html: `
+      <svg width="26" height="38" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 0C5.82 0 0 5.82 0 13c0 9.25 13 25 13 25s13-15.75 13-25C26 5.82 20.18 0 13 0z"
+              fill="${color}" stroke="#ffffff" stroke-width="1.5" />
+        <circle cx="13" cy="13" r="4.5" fill="#ffffff" />
+      </svg>`,
+    iconSize: [26, 38],
+    iconAnchor: [13, 38], // tip of the teardrop sits on the coordinate
+    popupAnchor: [0, -34], // popup opens just above the pin
+  });
 }
 
 export default function LocationMap({ locations, onSelect }: LocationMapProps) {
@@ -42,40 +54,36 @@ export default function LocationMap({ locations, onSelect }: LocationMapProps) {
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      {locations.map((location) => {
-        const color = magnitudeColor(location.magnitude);
-        return (
-          <CircleMarker
-            key={location.id}
-            center={[location.latitude, location.longitude]}
-            radius={markerRadius(location.magnitude)}
-            pathOptions={{ color, fillColor: color, fillOpacity: 0.6, weight: 1 }}
-          >
-            <Popup>
-              <div style={{ minWidth: 180 }}>
-                <strong>
-                  {formatMagnitude(location.magnitude)} — {location.title}
-                </strong>
-                <br />
-                <button
-                  onClick={() => onSelect(location.id)}
-                  style={{
-                    marginTop: 8,
-                    padding: '6px 12px',
-                    border: 'none',
-                    borderRadius: 6,
-                    background: '#2563eb',
-                    color: '#fff',
-                    cursor: 'pointer',
-                  }}
-                >
-                  View details
-                </button>
-              </div>
-            </Popup>
-          </CircleMarker>
-        );
-      })}
+      {locations.map((location) => (
+        <Marker
+          key={location.id}
+          position={[location.latitude, location.longitude]}
+          icon={pinIcon(location.magnitude)}
+        >
+          <Popup>
+            <div style={{ minWidth: 180 }}>
+              <strong>
+                {formatMagnitude(location.magnitude)} — {location.title}
+              </strong>
+              <br />
+              <button
+                onClick={() => onSelect(location.id)}
+                style={{
+                  marginTop: 8,
+                  padding: '6px 12px',
+                  border: 'none',
+                  borderRadius: 6,
+                  background: '#2563eb',
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                View details
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }
