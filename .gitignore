@@ -50,3 +50,4 @@ docs-private/
 .claude/
 CLAUDE.md
 AGENTS.md
+.gstack/

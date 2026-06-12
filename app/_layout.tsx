@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import AppFrame from '@/components/AppFrame';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 /**
@@ -20,13 +21,17 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{ title: 'Earthquakes · last 24h' }}
-        />
-        <Stack.Screen name="location/[id]" options={{ title: 'Details' }} />
-      </Stack>
+      {/* On web, AppFrame centres the app in a phone-sized column; on native
+          it is a transparent passthrough (the app already owns the screen). */}
+      <AppFrame>
+        <Stack>
+          <Stack.Screen
+            name="index"
+            options={{ title: 'Earthquakes · last 24h' }}
+          />
+          <Stack.Screen name="location/[id]" options={{ title: 'Details' }} />
+        </Stack>
+      </AppFrame>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
