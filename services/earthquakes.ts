@@ -14,6 +14,13 @@ import type { Location } from '@/types/location';
 const FEED_URL =
   'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson';
 
+/**
+ * How long to wait for the feed before giving up. Without this, a hung
+ * connection (flaky network, API stall) would leave the UI on "Loading…"
+ * forever with no way to recover.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 /** The subset of the USGS GeoJSON response this app actually reads. */
 type UsgsFeature = {
   id: string;
@@ -53,7 +60,27 @@ export async function fetchLocations(options?: {
     return cache;
   }
 
-  const response = await fetch(FEED_URL);
+  // Abort the request if it outlives the timeout, so a stalled network can't
+  // leave the screen spinning indefinitely.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(FEED_URL, { signal: controller.signal });
+  } catch (e) {
+    // A timeout surfaces as an AbortError; translate it into a message the
+    // user can act on instead of a cryptic low-level one.
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error(
+        `USGS request timed out after ${REQUEST_TIMEOUT_MS / 1000}s — check your connection and try again.`
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
+
   if (!response.ok) {
     throw new Error(`USGS request failed (HTTP ${response.status})`);
   }
@@ -65,6 +92,15 @@ export async function fetchLocations(options?: {
 
   cache = locations;
   return locations;
+}
+
+/**
+ * Synchronous cache lookup — returns a location only if the feed is already in
+ * memory, otherwise undefined. Lets the detail screen render instantly when the
+ * user arrived from the map (no spinner flash), without forcing a network call.
+ */
+export function getCachedLocationById(id: string): Location | undefined {
+  return cache?.find((location) => location.id === id);
 }
 
 /** Find a single location by id, fetching the feed first if needed. */

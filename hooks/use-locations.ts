@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { fetchLocations, getLocationById } from '@/services/earthquakes';
+import {
+  fetchLocations,
+  getCachedLocationById,
+  getLocationById,
+} from '@/services/earthquakes';
 import type { Location } from '@/types/location';
 
 /**
@@ -46,8 +50,13 @@ export function useLocations() {
  * straight to a detail URL triggers one fetch first.
  */
 export function useLocation(id: string | undefined) {
-  const [location, setLocation] = useState<Location | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Seed from the in-memory cache on first render. When the user came from the
+  // map the feed is already loaded, so the detail shows immediately with no
+  // spinner flash. Deep-linking straight to this URL finds an empty cache, so
+  // these start null/loading and the effect below fetches.
+  const cached = id ? getCachedLocationById(id) : undefined;
+  const [location, setLocation] = useState<Location | null>(cached ?? null);
+  const [isLoading, setIsLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,6 +67,10 @@ export function useLocation(id: string | undefined) {
       if (!id) {
         setError('No location id provided');
         setIsLoading(false);
+        return;
+      }
+      // Already resolved synchronously from the cache — nothing to fetch.
+      if (getCachedLocationById(id)) {
         return;
       }
       try {

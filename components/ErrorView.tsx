@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useThemeColors } from '@/hooks/use-theme-colors';
+
 type ErrorViewProps = {
   message: string;
   onRetry: () => void;
@@ -11,10 +13,13 @@ type ErrorViewProps = {
  * giving the user a clear message and a way to recover is table stakes.
  */
 export default function ErrorView({ message, onRetry }: ErrorViewProps) {
+  const colors = useThemeColors();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Couldn&apos;t load locations</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>
+        Couldn&apos;t load locations
+      </Text>
+      <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text>
       <Pressable
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         onPress={onRetry}
@@ -39,7 +44,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    color: '#6b7280',
     textAlign: 'center',
   },
   button: {

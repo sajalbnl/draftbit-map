@@ -16,6 +16,8 @@ import {
   magnitudeLabel,
 } from '@/constants/magnitude';
 import { useLocation } from '@/hooks/use-locations';
+import { useThemeColors } from '@/hooks/use-theme-colors';
+import type { ThemeColors } from '@/constants/colors';
 
 /**
  * Screen 2 — location detail. Route: /location/[id]
@@ -30,6 +32,7 @@ export default function LocationDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { location, isLoading, error } = useLocation(id);
+  const colors = useThemeColors();
 
   if (isLoading) {
     return <LoadingView message="Loading details…" />;
@@ -62,7 +65,7 @@ export default function LocationDetailScreen() {
         </Text>
       </View>
 
-      <Text style={styles.title}>{location.title}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{location.title}</Text>
 
       {location.tsunami && (
         <View style={styles.tsunamiBanner}>
@@ -70,23 +73,35 @@ export default function LocationDetailScreen() {
         </View>
       )}
 
-      <View style={styles.card}>
-        <DetailRow label="Time" value={new Date(location.time).toLocaleString()} />
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <DetailRow
+          label="Time"
+          value={new Date(location.time).toLocaleString()}
+          colors={colors}
+        />
         <DetailRow
           label="Depth"
           value={
             location.depthKm !== null ? `${location.depthKm.toFixed(1)} km` : 'Unknown'
           }
+          colors={colors}
         />
         <DetailRow
           label="Coordinates"
           value={`${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`}
+          colors={colors}
         />
         <DetailRow
           label="Felt reports"
           value={
             location.feltReports !== null ? String(location.feltReports) : 'None submitted'
           }
+          colors={colors}
         />
       </View>
 
@@ -103,11 +118,19 @@ export default function LocationDetailScreen() {
 }
 
 /** Small presentational helper for label/value rows. */
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  colors,
+}: {
+  label: string;
+  value: string;
+  colors: ThemeColors;
+}) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={[styles.row, { borderBottomColor: colors.border }]}>
+      <Text style={[styles.rowLabel, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.rowValue, { color: colors.text }]}>{value}</Text>
     </View>
   );
 }
@@ -152,10 +175,11 @@ const styles = StyleSheet.create({
     color: '#92400e',
     fontWeight: '600',
   },
+  // Colour (backgroundColor / borderColor) is applied inline from the theme
+  // palette so these surfaces stay readable in both light and dark mode.
   card: {
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1d5db',
     overflow: 'hidden',
   },
   row: {
@@ -166,11 +190,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
   },
   rowLabel: {
     fontSize: 14,
-    color: '#6b7280',
   },
   rowValue: {
     fontSize: 14,
