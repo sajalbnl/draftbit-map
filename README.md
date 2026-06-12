@@ -70,15 +70,22 @@ and dark mode, following the OS setting.
 
 ## Deploy to Cloudflare
 
-```bash
-npx wrangler login   # once
-npm run deploy       # = expo export --platform web && wrangler deploy
-```
+Deployment is **automatic via Cloudflare's GitHub integration** (Workers
+Builds) — there's no manual deploy step. The repo is connected to a Cloudflare
+Worker, so every push to `main` triggers a build and deploy:
 
-The exported `dist/` folder is served as static assets by a Cloudflare Worker.
+1. Cloudflare runs the build command **`npx expo export --platform web`**,
+   which produces the static web build in `dist/`.
+2. It then publishes using `wrangler.jsonc`, which serves `dist/` as the
+   Worker's static assets.
+
 `not_found_handling: "single-page-application"` in `wrangler.jsonc` makes deep
 links like `/location/us7000abcd` serve `index.html` so expo-router can handle
-routing client-side.
+routing client-side (otherwise a refresh on that URL would 404).
+
+> Manual deploys are also possible from a machine with the Cloudflare CLI
+> (`npx wrangler login` once, then `npm run deploy`), but the day-to-day flow
+> is just `git push`.
 
 ## Useful scripts
 
